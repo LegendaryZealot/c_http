@@ -27,11 +27,11 @@ int getServerScok()
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    if(-1==bind(server,(struct sockaddr *)&server_addr,sizeof(server_addr))
+    if(-1==bind(sockfd,(struct sockaddr *)&server_addr,sizeof(server_addr)))
     {
         return -2;
     }
-    if(-1==listen(server,QUEUE))
+    if(-1==listen(sockfd,MAX_CONNECT))
     {
         return -3;
     }
@@ -40,11 +40,11 @@ int getServerScok()
 
 int runServerSock()
 {
-    while(true)
+    while(1)
     {
         struct sockaddr_in client_addr;
         socklen_t length = sizeof(client_addr);
-        int client = accept(server,(struct sockaddr*)&client_addr,&length);
+        int client = accept(sockfd,(struct sockaddr*)&client_addr,&length);
         if(acceptCallBack)
         {
             acceptCallBack(client);
