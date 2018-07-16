@@ -3,6 +3,6 @@
 
 #define ROOT "./"
 #define PORT 3490
-#define MAX_CONNECT 10
+#define MAX_CONNECT 5
 
 #endif
