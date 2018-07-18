@@ -12,6 +12,7 @@
 #include "define.h"
 
 int sockfd=0;
+AcceptCallback acceptCallBack;
 
 int getServerScok()
 {
@@ -40,14 +41,23 @@ int getServerScok()
 
 int runServerSock()
 {
+    if(sockfd<=0)
+    {
+        return -1;
+    }
     while(1)
     {
         struct sockaddr_in client_addr;
         socklen_t length = sizeof(client_addr);
         int client = accept(sockfd,(struct sockaddr*)&client_addr,&length);
+        printf("get a connect client!\n");
         if(acceptCallBack)
         {
             acceptCallBack(client);
+        }
+        else
+        {
+            printf("callback is empty!\n");
         }
     }
 }

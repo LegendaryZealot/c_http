@@ -3,10 +3,7 @@
 
 typedef void (*AcceptCallback)(int acceptSock);
 
-AcceptCallback acceptCallBack;
-
 int getServerScok();
 int runServerSock();
-
 
 #endif
