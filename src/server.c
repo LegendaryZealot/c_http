@@ -5,6 +5,9 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "sock.h"
 #include "define.h"
@@ -15,9 +18,12 @@ extern AcceptCallback acceptCallBack;
 void OnAcceptCallback(int sock);
 void DropRedundancyHead(int sock);
 void HandleRequestHead(int sock);
+void HandleResponse(int sock);
 void ErrorPage(int sock);
 void NotFoundPage(int sock);
 void IStrCat(char *,char *);
+void sendRawFile(int sock,char *path);
+void execCgi(int sock,char *path);
 
 int StartServer()
 {
@@ -31,11 +37,8 @@ void OnAcceptCallback(int sock)
 {
     printf("Acceptcallback actived!\n");
     HandleRequestHead(sock);
-    char html[]="HTTP/1.x 200 OK\nContent-Type:text\n\nhi";
-    int len = send(sock,html,strlen(html),0);
-    printf("send:%d\n",len);
+    HandleResponse(sock);
     close(sock);
-    printf("sock closed!\n");
 }
 
 void HandleRequestHead(int sock)
@@ -59,10 +62,38 @@ void HandleRequestHead(int sock)
     char path[128];
     char httpVersion[128];
     sscanf(requestHead,"%s %s %s",method,path,httpVersion);
+    setenv("method",method,1);
+    setenv("path",path,1);
+    setenv("httpVersion",httpVersion,1);
     printf("%s %s %s\n",method,path,httpVersion);
-    // printf("%s\n",requestHead);
-    // printf("Accepted!\n%s\n",requestHead);
-} 
+}
+
+void HandleResponse(int sock)
+{
+    char *path;
+    path=getenv("path");
+    if(NULL==path)
+    {
+        ErrorPage(sock);
+        return;
+    }
+    char fullPath[256];
+    memset(fullPath,'0',sizeof(fullPath));
+    strcpy(fullPath,ROOT);
+    strcat(fullPath,path);
+    if(0!=access(fullPath,R_OK))
+    {
+        ErrorPage(sock);
+    }
+    if(0!=access(fullPath,X_OK))
+    {
+        sendRawFile(sock,fullPath);
+    }
+    else
+    {
+        execCgi(sock,fullPath);
+    }
+}
 
 void DropRedundancyHead(int sock)
 {
@@ -91,4 +122,42 @@ void NotFoundPage(int sock)
     send(sock,buf,strlen(buf),0);
     sprintf(buf,"%s","Page not found!\n");
     send(sock,buf,strlen(buf),0);
+}
+
+void sendRawFile(int sock,char *path)
+{
+    char buf[128];
+    if(NULL!=strstr(path,".html"))
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:image\n\n");
+    }
+    else
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:text\n\n");
+    }
+    send(sock,buf,strlen(buf),0);
+    int fp=open(path,O_RDWR);
+    if(-1==fp)
+    {
+        ErrorPage(sock);
+    }
+    while(memset(buf,'\0',sizeof(buf)),read(fp,buf,sizeof(buf)))
+    {
+        send(sock,buf,strlen(buf),0);
+    }
+    close(fp);
+}
+
+void execCgi(int sock,char *path)
+{
+    char buf[128];
+    int fp=popen(path,"r");
+    if(NULL!=fp)
+    {
+        while(memset(buf,'\0',sizeof(buf)),read(fp,buf,sizeof(buf)))
+        {
+            send(sock,buf,sizeof(buf),0);
+        }
+    }
+    pclose(fp); 
 }
