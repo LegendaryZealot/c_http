@@ -22,23 +22,27 @@ void HandleResponse(int sock);
 void ErrorPage(int sock);
 void NotFoundPage(int sock);
 void IStrCat(char *,char *);
-void sendRawFile(int sock,char *path);
-void execCgi(int sock,char *path);
+void SendRawFile(int sock,char *path);
+void ExecCgi(int sock,char *path);
 
 int StartServer()
 {
     acceptCallBack=OnAcceptCallback;
-    printf("%d\n",getServerScok());
+    int initCode=getServerScok();
+    printf("serverSock init code:%d\n",initCode);
+    if(initCode<=0)
+    {
+        printf("serverSock init error!\n");
+        return -1;
+    }
     printf("%d\n",runServerSock());
     return 0;
 }
 
 void OnAcceptCallback(int sock)
 {
-    printf("Acceptcallback actived!\n");
     HandleRequestHead(sock);
     HandleResponse(sock);
-    close(sock);
 }
 
 void HandleRequestHead(int sock)
@@ -61,7 +65,12 @@ void HandleRequestHead(int sock)
     char method[128];
     char path[128];
     char httpVersion[128];
-    sscanf(requestHead,"%s %s %s",method,path,httpVersion);
+    int count=sscanf(requestHead,"%s %s %s",method,path,httpVersion);
+    if(3!=count)
+    {
+        ErrorPage(sock);
+        return;
+    }
     setenv("method",method,1);
     setenv("path",path,1);
     setenv("httpVersion",httpVersion,1);
@@ -83,15 +92,15 @@ void HandleResponse(int sock)
     strcat(fullPath,path);
     if(0!=access(fullPath,R_OK))
     {
-        ErrorPage(sock);
+        NotFoundPage(sock);
     }
     if(0!=access(fullPath,X_OK))
     {
-        sendRawFile(sock,fullPath);
+        SendRawFile(sock,fullPath);
     }
     else
     {
-        execCgi(sock,fullPath);
+        ExecCgi(sock,fullPath);
     }
 }
 
@@ -124,7 +133,7 @@ void NotFoundPage(int sock)
     send(sock,buf,strlen(buf),0);
 }
 
-void sendRawFile(int sock,char *path)
+void SendRawFile(int sock,char *path)
 {
     char buf[128];
     if(NULL!=strstr(path,".html"))
@@ -137,26 +146,25 @@ void sendRawFile(int sock,char *path)
     }
     send(sock,buf,strlen(buf),0);
     int fp=open(path,O_RDWR);
-    if(-1==fp)
-    {
-        ErrorPage(sock);
-    }
-    while(memset(buf,'\0',sizeof(buf)),read(fp,buf,sizeof(buf)))
-    {
-        send(sock,buf,strlen(buf),0);
-    }
-    close(fp);
-}
-
-void execCgi(int sock,char *path)
-{
-    char buf[128];
-    int fp=popen(path,"r");
-    if(NULL!=fp)
+    if(-1!=fp)
     {
         while(memset(buf,'\0',sizeof(buf)),read(fp,buf,sizeof(buf)))
         {
             send(sock,buf,sizeof(buf),0);
+        }
+    }
+    close(fp);
+}
+
+void ExecCgi(int sock,char *path)
+{
+    char buf[128];
+    FILE *fp=popen(path,"r");
+    if(fp)
+    {
+        while(memset(buf, '0', sizeof(buf)), fgets(buf, sizeof(buf) - 1, fp) != 0 ) 
+        {
+            send(sock,buf,strlen(buf),0);
         }
     }
     pclose(fp); 

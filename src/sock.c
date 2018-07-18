@@ -50,20 +50,14 @@ int runServerSock()
         struct sockaddr_in client_addr;
         socklen_t length = sizeof(client_addr);
         int client = accept(sockfd,(struct sockaddr*)&client_addr,&length);
-        int forkResult;
-        forkResult=fork();
-        if(forkResult>0)
+        if(-1!=client)
         {
+            printf("get a connect client:%d!\n",client);
             if(acceptCallBack)
             {
                 acceptCallBack(client);
             }
-            else
-            {
-                printf("callback is empty!\n");
-            }
-            exit(0);
         }
-        printf("get a connect client!\n");
+        close(client);
     }
 }
