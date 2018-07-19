@@ -52,7 +52,7 @@ int runServerSock()
         int client = accept(sockfd,(struct sockaddr*)&client_addr,&length);
         if(-1!=client)
         {
-            printf("get a connect client:%d!\n",client);
+            printf("get a connect ,sock fd:%d!\n",client);
             if(acceptCallBack)
             {
                 acceptCallBack(client);

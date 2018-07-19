@@ -91,7 +91,7 @@ void HandleRequestHead(int sock)
     setenv("method",method,1);
     setenv("path",path,1);
     setenv("httpVersion",httpVersion,1);
-    printf("%s %s %s\n",method,path,httpVersion);
+    printf("method:%s path:%s http version:%s\n",method,path,httpVersion);
 }
 
 void HandleResponse(int sock)
@@ -170,6 +170,22 @@ void SendRawFile(int sock,char *path)
     {
         sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:application/x-javascript\n\n");
     }
+    else if(strstr(path,".jpg"))
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:application/x-jpg\n\n");
+    }
+    else if(strstr(path,".jpeg"))
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:image/jpeg\n\n");
+    }
+    else if(strstr(path,".jpe"))
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:image/jpeg\n\n");
+    }
+    else if(strstr(path,".gif"))
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:image/gif\n\n");
+    }
     else
     {
         sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:image/tiff\n\n");
@@ -178,10 +194,17 @@ void SendRawFile(int sock,char *path)
     int fp=open(path,O_RDWR);
     if(-1!=fp)
     {
-        while(memset(buf,'\0',sizeof(buf)),read(fp,buf,sizeof(buf)))
+        int bufSize=sizeof(buf);
+        int bufReadSize;
+        do
         {
-            send(sock,buf,sizeof(buf),0);
-        }
+            memset(buf,'\0',bufSize);
+            bufReadSize=read(fp,buf,bufSize);
+            if(-1==send(sock,buf,bufReadSize,0))
+            {
+                break;
+            }
+        }while(bufReadSize>0);
     }
     close(fp);
 }
@@ -192,9 +215,13 @@ void ExecCgi(int sock,char *path)
     FILE *fp=popen(path,"r");
     if(fp)
     {
-        while(memset(buf, '0', sizeof(buf)), fgets(buf, sizeof(buf) - 1, fp) != 0 ) 
+        int bufSize=sizeof(buf);
+        while(memset(buf,'0', bufSize), fgets(buf,bufSize, fp) != 0 ) 
         {
-            send(sock,buf,strlen(buf),0);
+            if(-1==send(sock,buf,strlen(buf),0))
+            {
+                break;
+            }
         }
     }
     pclose(fp); 
