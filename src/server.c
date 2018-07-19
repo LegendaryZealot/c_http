@@ -43,9 +43,10 @@ int StartServer()
 
 void OnAcceptCallback(int sock)
 {
-    printf("callback:\npid:%d\ntid:%d\n\n",getpid(),pthread_self());
+    printf("callback:\npid:%ld\ntid:%ld\n\n",(long)getpid(),(long)pthread_self());
     pthread_t *my_thread;
-    if(0!=(pthread_create(&my_thread,NULL,AcceptCallbackThread,sock)))
+    int err;
+    if(0!=(err=pthread_create((pthread_t *)&my_thread,NULL,AcceptCallbackThread,(void *)&sock)))
     {
         printf("accept callback thread create error!\n");
     }
@@ -53,8 +54,8 @@ void OnAcceptCallback(int sock)
 
 void *AcceptCallbackThread(void *sock)
 {
-    printf("callback thread:\npid:%d\ntid:%d\n\n",getpid(),pthread_self());
-    int sockfd=(int)sock;
+    printf("callback thread:\npid:%ld\ntid:%ld\n\n",(long)getpid(),(long)pthread_self());
+    int sockfd=*(int *)sock;
     HandleRequestHead(sockfd);
     HandleResponse(sockfd);
     close(sockfd);
