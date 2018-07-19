@@ -58,6 +58,5 @@ int runServerSock()
                 acceptCallBack(client);
             }
         }
-        close(client);
     }
 }

@@ -4,7 +4,7 @@ SOURCE  := $(wildcard *.c) $(wildcard *.cpp)
 OBJS    := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCE)))
 
 CC      := gcc
-LIBS    :=
+LIBS    := -lpthread
 LDFLAGS :=
 INCLUDE := -I.
 CFLAGS  := -g -Wall -O3 $(DEFINES) $(INCLUDE)

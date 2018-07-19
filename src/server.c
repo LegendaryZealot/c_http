@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <pthread.h>
 
 #include "sock.h"
 #include "define.h"
@@ -17,6 +18,7 @@ extern AcceptCallback acceptCallBack;
 
 void OnAcceptCallback(int sock);
 void DropRedundancyHead(int sock);
+void *AcceptCallbackThread(void *sock);
 void HandleRequestHead(int sock);
 void HandleResponse(int sock);
 void ErrorPage(int sock);
@@ -41,8 +43,22 @@ int StartServer()
 
 void OnAcceptCallback(int sock)
 {
-    HandleRequestHead(sock);
-    HandleResponse(sock);
+    printf("callback:\npid:%d\ntid:%d\n\n",getpid(),pthread_self());
+    pthread_t *my_thread;
+    if(0!=(pthread_create(&my_thread,NULL,AcceptCallbackThread,sock)))
+    {
+        printf("accept callback thread create error!\n");
+    }
+}
+
+void *AcceptCallbackThread(void *sock)
+{
+    printf("callback thread:\npid:%d\ntid:%d\n\n",getpid(),pthread_self());
+    int sockfd=(int)sock;
+    HandleRequestHead(sockfd);
+    HandleResponse(sockfd);
+    close(sockfd);
+    return NULL;
 }
 
 void HandleRequestHead(int sock)
@@ -92,15 +108,20 @@ void HandleResponse(int sock)
     strcat(fullPath,path);
     if(0!=access(fullPath,R_OK))
     {
+        printf("access error!\n");
         NotFoundPage(sock);
     }
     if(0!=access(fullPath,X_OK))
     {
+        printf("Raw start!\n");
         SendRawFile(sock,fullPath);
+        printf("Raw end!\n");
     }
     else
     {
+        printf("CGI start!\n");
         ExecCgi(sock,fullPath);
+        printf("CGI end!\n");
     }
 }
 
