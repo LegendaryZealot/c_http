@@ -158,13 +158,21 @@ void NotFoundPage(int sock)
 void SendRawFile(int sock,char *path)
 {
     char buf[128];
-    if(NULL!=strstr(path,".html"))
+    if(strstr(path,".html"))
     {
-        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:image\n\n");
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:text/html\n\n");
+    }
+    else if(strstr(path,".css"))
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:text/css\n\n");
+    }
+    else if(strstr(path,".js"))
+    {
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:application/x-javascript\n\n");
     }
     else
     {
-        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:text\n\n");
+        sprintf(buf,"%s","HTTP/1.x 200 OK\nContent-Type:image/tiff\n\n");
     }
     send(sock,buf,strlen(buf),0);
     int fp=open(path,O_RDWR);
