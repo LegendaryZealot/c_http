@@ -3,7 +3,7 @@
 ## use
 ### git clone https://github.com/LegendaryZealot/c_http.git
 ### cd c_http
-### cd test
+### cd server_test_file
 ### make
 ### cd ../src
 ### make
