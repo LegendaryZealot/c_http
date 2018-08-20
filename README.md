@@ -1,5 +1,8 @@
 # c_http
 
+## readme
+### 精简的httpd服务器
+
 ## use
 ### git clone https://github.com/LegendaryZealot/c_http.git
 ### cd c_http
